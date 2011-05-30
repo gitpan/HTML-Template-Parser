@@ -1,9 +1,10 @@
 package HTML::Template::Parser;
 
+use 5.008_001;
 use strict;
 use warnings;
 
-our $VERSION = '0.1';
+our $VERSION = '0.1001';
 
 use base qw(Class::Accessor::Fast);
 __PACKAGE__->mk_accessors(qw());
@@ -246,7 +247,7 @@ __END__
 
 =head1 NAME
 
-HTML::Template::Parser - Praser for HTML::Template syntax template file & writer.
+HTML::Template::Parser - Parser for HTML::Template syntax template file & writer.
 
 =head1 VERSION
 
@@ -261,8 +262,7 @@ This document describes HTML::Template::Parser version 0.1.
     use HTML::Template::Parser::TreeWriter::TextXslate::Metakolon;
 
     my $parser = HTML::Template::Parser->new;
-    my $list = $parser->parse("<TMPL_VAR EXPR=html(name)>");
-    my $tree = $parser->list_to_tree($list);
+    my $tree = $parser->parse("<TMPL_VAR EXPR=html(name)>");
 
     my $writer = HTML::Template::Parser::TreeWriter::TextXslate::Metakolon->new;
     print $writer->write($tree);
@@ -281,11 +281,7 @@ Creates a new tempalte parser.
 
 =head2 B<< $parser->parse($string) >>
 
-Parse $string to list.
-
-=head2 B<< $parser->list_to_tree($tree) >>
-
-Build tree from $list.
+Parse $string to tree.
 
 =head1 AUTHOR
 
