@@ -1,5 +1,5 @@
 ---
-abstract: 'Praser for HTML::Template syntax template file & writer.'
+abstract: 'Parser for HTML::Template syntax template file & writer.'
 author:
   - 'Shigeki Morimoto <Shigeki(at)Morimo.to>'
 build_requires:
@@ -18,6 +18,11 @@ no_index:
   directory:
     - inc
     - t
+requires:
+  Class::Accessor::Fast: 0
+  Parse::RecDescent: 0
+  YAML: 0
+  perl: 5.8.1
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.1
+version: 0.1005

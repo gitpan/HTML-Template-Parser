@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use base qw(HTML::Template::Parser::TreeWriter);
-__PACKAGE__->mk_accessors(qw( expr_writer ));
+__PACKAGE__->mk_accessors(qw( expr_writer wrap_template_target special_raw_var_map ));
 
 sub new {
     my $class = shift;
@@ -12,6 +12,7 @@ sub new {
     $self->expr_writer(HTML::Template::Parser::TreeWriter::TextXslate::Metakolon::Expr->new);
     $self->context([]);
     $self->expr_writer->context($self->context);
+    $self->special_raw_var_map({});
     $self;
 }
 sub get_type {
@@ -48,15 +49,15 @@ sub _pre_String {
 sub _pre_Var {
     my($self, $node) = @_;
 
-    my $src = $node->name_or_expr->[1];
     my $is_raw = 1;
+    my $src = $node->name_or_expr->[1];
     if($self->is_escaped($src)){
+        $is_raw = 0;
         $src = $self->remove_escape_function($src);
-        $is_raw = 0;
     }
-    if(lc($node->escape || '') eq 'html'){
-        $node->escape(0);
+    if(lc($node->escape) eq 'html'){
         $is_raw = 0;
+        $node->escape(0);
     }
     my $name_or_expr = $self->expr_writer->write($src);
     if(defined($node->default)){
@@ -66,6 +67,9 @@ sub _pre_Var {
         $name_or_expr .= " | " . $node->escape;
     }
 
+    if($name_or_expr =~ /^\$(.*)/ and $self->special_raw_var_map->{$1}){
+        $is_raw = 1;
+    }
     if($is_raw){
         qq{[% $name_or_expr | mark_raw %]};
     }else{
@@ -87,8 +91,8 @@ sub _pre_Include {
     }
     my $name_or_expr = $self->expr_writer->write($node->name_or_expr->[1]);
     my $template;
-    if($ENV{WRAP_TEMPLATE_TARGET}){ # for on-the-fly converting.
-        $template = "$ENV{WRAP_TEMPLATE_TARGET}($name_or_expr)";
+    if($self->wrap_template_target){ # for on-the-fly converting.
+        $template = $self->wrap_template_target . "($name_or_expr)";
     }else{
         $template = $name_or_expr;
     }
@@ -106,14 +110,14 @@ sub _pre_If {
 
     my $name_or_expr = $self->expr_writer->write($node->name_or_expr->[1]);
     # @@@ @@@ @@@ @@@. Text::Xslate eval [] as true. so wrap it.
-    "[% if(_is_empty($name_or_expr)){ %]";
+    "[% if(_has_value($name_or_expr)){ %]";
 }
 
 sub _pre_ElsIf {
     my($self, $node) = @_;
 
     my $name_or_expr = $self->expr_writer->write($node->name_or_expr->[1]);
-    "[% }elsif(_is_empty($name_or_expr)){ %]";
+    "[% }elsif(_has_value($name_or_expr)){ %]";
 }
 
 sub _pre_Else {
@@ -128,7 +132,7 @@ sub _pre_Unless {
     my($self, $node) = @_;
 
     my $name_or_expr = $self->expr_writer->write($node->name_or_expr->[1]);
-    "[% if(! _is_empty($name_or_expr)){ %]";
+    "[% if(! _has_value($name_or_expr)){ %]";
 }
 
 sub _pre_UnlessEnd {
