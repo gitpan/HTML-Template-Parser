@@ -4,7 +4,7 @@ use 5.008_001;
 use strict;
 use warnings;
 
-our $VERSION = '0.1009';
+our $VERSION = '0.1010';
 
 use base qw(Class::Accessor::Fast);
 __PACKAGE__->mk_accessors(qw());
@@ -47,8 +47,14 @@ sub _template_string_to_list {
         my $tag_temp = $tag;
         my $parsed_tag;
         # capture error message.
-        open(Parse::RecDescent::ERROR, '>', \my $error_string) or die "open:[$!]\n";
+        my $error_string = '';
         eval {
+            local (*STDERR, *Parse::RecDescent::ERROR);
+            if(Parse::RecDescent->can('_write_ERROR')){ # @@@ @@@
+                open(STDERR, '>:scalar', \$error_string);
+            }else{
+                open(Parse::RecDescent::ERROR, '>', \my $error_string) or die "open:[$!]\n";
+            }
             $parsed_tag = $self->_get_parser_instance->tag(\$tag_temp);
         };
         if($@){
